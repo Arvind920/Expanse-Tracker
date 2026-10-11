@@ -1,21 +1,53 @@
 // FlowExpense - API Service Layer
 const API_BASE = '/api';
+const TOKEN_KEY = 'flowexpense_token';
 
 const api = {
+  getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+  },
+
+  setToken(token) {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  },
+
+  clearToken() {
+    localStorage.removeItem(TOKEN_KEY);
+  },
+
+  isAuthenticated() {
+    return !!this.getToken();
+  },
+
   async request(endpoint, options = {}) {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+      };
+
+      const token = this.getToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${API_BASE}${endpoint}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers
-        },
-        ...options
+        ...options,
+        headers
       });
 
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
         if (!response.ok) {
+          if (response.status === 401 && !endpoint.startsWith('/auth')) {
+            // Token expired or invalid
+            window.dispatchEvent(new CustomEvent('auth:expired'));
+          }
           throw new Error(data.error || `HTTP error! status: ${response.status}`);
         }
         return data;
@@ -25,6 +57,48 @@ const api = {
       console.error(`API Error on ${endpoint}:`, err);
       throw err;
     }
+  },
+
+  // Authentication
+  async register(userData) {
+    const res = await this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
+    if (res.token) {
+      this.setToken(res.token);
+    }
+    return res;
+  },
+
+  async login(credentials) {
+    const res = await this.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials)
+    });
+    if (res.token) {
+      this.setToken(res.token);
+    }
+    return res;
+  },
+
+  async getCurrentUser() {
+    if (!this.getToken()) return null;
+    try {
+      const res = await this.request('/auth/me');
+      return res.user;
+    } catch {
+      this.clearToken();
+      return null;
+    }
+  },
+
+  async updateUserPreferences(prefs) {
+    const res = await this.request('/auth/preferences', {
+      method: 'POST',
+      body: JSON.stringify(prefs)
+    });
+    return res.user;
   },
 
   // Stats

@@ -71,6 +71,34 @@
             <i class="fa-solid fa-plus"></i>
             <span class="btn-text">Add Transaction</span>
           </button>
+
+          <!-- Auth Header Controls -->
+          <div id="auth-header-controls" class="auth-header-controls">
+            <!-- Unauthenticated: Sign In button -->
+            <button id="btn-open-auth" class="btn btn-outline-primary" title="Sign In or Register">
+              <i class="fa-solid fa-arrow-right-to-bracket"></i>
+              <span class="btn-text">Sign In</span>
+            </button>
+
+            <!-- Authenticated: User Profile Menu -->
+            <div id="user-profile-menu" class="user-profile-menu hidden">
+              <button id="btn-user-menu" class="user-profile-btn" aria-expanded="false" aria-haspopup="true" title="User Profile">
+                <span class="user-avatar" id="user-avatar-initial">U</span>
+                <span class="user-name" id="user-display-name">Account</span>
+                <i class="fa-solid fa-chevron-down user-chevron"></i>
+              </button>
+              <div id="user-dropdown-menu" class="user-dropdown-menu hidden">
+                <div class="user-dropdown-header">
+                  <div class="dropdown-user-name" id="dropdown-user-name">User Name</div>
+                  <div class="dropdown-user-email" id="dropdown-user-email">user@example.com</div>
+                </div>
+                <hr class="dropdown-divider">
+                <button id="btn-logout" class="dropdown-item dropdown-logout">
+                  <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </header>
@@ -78,6 +106,22 @@
     <!-- Main Content Area -->
     <main class="main-content">
       <div class="content-container">
+
+        <!-- Guest Welcome / Auth Prompt Banner (shown when not logged in) -->
+        <div id="guest-welcome-banner" class="guest-welcome-banner hidden">
+          <div class="guest-banner-content">
+            <div class="guest-banner-icon">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="guest-banner-text">
+              <h3>Private Multi-User Cloud Storage Active</h3>
+              <p>Create a free private account or sign in to keep all your transactions, EMIs, and investments confidential and safely synced.</p>
+            </div>
+          </div>
+          <button id="btn-guest-banner-auth" class="btn btn-primary">
+            <i class="fa-solid fa-user-plus"></i> Sign In / Create Account
+          </button>
+        </div>
 
         <!-- Top Greeting & Date Banner -->
         <div class="greeting-banner">
@@ -566,12 +610,12 @@
             <h4><i class="fa-solid fa-file-export"></i> Export Financial Data</h4>
             <p>Download your transactions and records to use in Excel, Google Sheets, or as a secure backup.</p>
             <div class="tool-btn-row">
-              <a href="/api/export?format=csv" class="btn btn-secondary btn-sm" download="flowexpense-transactions.csv">
+              <button type="button" id="btn-export-csv" class="btn btn-secondary btn-sm">
                 <i class="fa-solid fa-file-csv"></i> Export as CSV
-              </a>
-              <a href="/api/export?format=json" class="btn btn-secondary btn-sm" download="flowexpense-backup.json">
+              </button>
+              <button type="button" id="btn-export-json" class="btn btn-secondary btn-sm">
                 <i class="fa-solid fa-file-code"></i> Export as JSON
-              </a>
+              </button>
             </div>
           </div>
 
@@ -622,6 +666,109 @@
           <button type="button" class="btn btn-danger" id="btn-confirm-del">
             <i class="fa-solid fa-trash-can"></i> Delete
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal (Sign In / Register) -->
+  <div id="modal-auth" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-auth-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-header-brand">
+            <div class="brand-logo-sm"><i class="fa-solid fa-wallet"></i></div>
+            <h3 id="modal-auth-title" class="modal-title">Welcome to FlowExpense</h3>
+          </div>
+          <button class="modal-close" id="btn-close-auth-modal" aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Auth Tabs -->
+          <div class="auth-tabs" role="tablist">
+            <button type="button" class="auth-tab-btn active" id="tab-btn-login" role="tab" aria-selected="true">Sign In</button>
+            <button type="button" class="auth-tab-btn" id="tab-btn-register" role="tab" aria-selected="false">Create Account</button>
+          </div>
+
+          <!-- Alert message box -->
+          <div id="auth-alert" class="auth-alert hidden"></div>
+
+          <!-- 1. Sign In Form -->
+          <form id="form-login" class="auth-form" novalidate>
+            <div class="form-group">
+              <label for="login-email">Email Address <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-envelope input-icon"></i>
+                <input type="email" id="login-email" placeholder="name@example.com" required autocomplete="email">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="login-password">Password <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-lock input-icon"></i>
+                <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+              </div>
+            </div>
+
+            <button type="submit" id="btn-submit-login" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In to My Account
+            </button>
+
+            <div class="auth-switch-text">
+              Don't have an account yet? <button type="button" class="btn-link" id="link-switch-to-register">Create an account</button>
+            </div>
+          </form>
+
+          <!-- 2. Register Form -->
+          <form id="form-register" class="auth-form hidden" novalidate>
+            <div class="form-group">
+              <label for="reg-name">Full Name <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-user input-icon"></i>
+                <input type="text" id="reg-name" placeholder="e.g. Arvind Kumar" required autocomplete="name">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-email">Email Address <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-envelope input-icon"></i>
+                <input type="email" id="reg-email" placeholder="name@example.com" required autocomplete="email">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-password">Password <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-lock input-icon"></i>
+                <input type="password" id="reg-password" placeholder="At least 6 characters" minlength="6" required autocomplete="new-password">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-currency">Default Currency</label>
+              <div class="select-wrapper">
+                <i class="fa-solid fa-coins select-icon"></i>
+                <select id="reg-currency">
+                  <option value="₹" selected>INR (₹) - Indian Rupee</option>
+                  <option value="$">USD ($) - US Dollar</option>
+                  <option value="€">EUR (€) - Euro</option>
+                  <option value="£">GBP (£) - British Pound</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" id="btn-submit-register" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-user-plus"></i> Create Free Account
+            </button>
+
+            <div class="auth-switch-text">
+              Already have an account? <button type="button" class="btn-link" id="link-switch-to-login">Sign in here</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

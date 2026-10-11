@@ -1,6 +1,56 @@
 {
   "transactions": [
     {
+      "id": "tx-45e5671d",
+      "type": "expense",
+      "amount": 3300,
+      "category": "Housing",
+      "date": "2026-10-11",
+      "paymentMethod": "UPI / Mobile Pay",
+      "note": "Makroniya Rent",
+      "createdAt": "2026-10-11T13:42:29.790Z"
+    },
+    {
+      "id": "tx-96bb885d",
+      "type": "expense",
+      "amount": 5100,
+      "category": "Housing",
+      "date": "2026-10-11",
+      "paymentMethod": "Cash",
+      "note": "Gurugram REnt",
+      "createdAt": "2026-10-11T13:41:58.157Z"
+    },
+    {
+      "id": "tx-64aae989",
+      "type": "expense",
+      "amount": 5000,
+      "category": "Other",
+      "date": "2026-10-11",
+      "paymentMethod": "UPI / Mobile Pay",
+      "note": "Mammi For Rashan",
+      "createdAt": "2026-10-11T13:41:30.563Z"
+    },
+    {
+      "id": "tx-7fbe16c2",
+      "type": "investment",
+      "amount": 3000,
+      "category": "Recurring Deposit (RD)",
+      "date": "2026-10-11",
+      "paymentMethod": "Credit Card",
+      "note": "rd",
+      "createdAt": "2026-10-11T13:35:58.771Z"
+    },
+    {
+      "id": "tx-ff4b58df",
+      "type": "expense",
+      "amount": 10501,
+      "category": "EMIs & Loans",
+      "date": "2026-10-11",
+      "paymentMethod": "Credit Card",
+      "note": "HDFC emi",
+      "createdAt": "2026-10-11T13:35:20.687Z"
+    },
+    {
       "id": "tx-0173b4d3",
       "type": "income",
       "amount": 50000,

@@ -1,8 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const { connectDB } = require('./src/config/db');
 
 // Import routes
+const authRouter = require('./src/routes/auth');
 const transactionsRouter = require('./src/routes/transactions');
 const statsRouter = require('./src/routes/stats');
 const budgetsRouter = require('./src/routes/budgets');
@@ -11,6 +14,9 @@ const dataManagementRouter = require('./src/routes/dataManagement');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Connect to MongoDB Atlas (gracefully falls back to local JSON if not set)
+connectDB();
 
 // Middleware
 app.use(cors());
@@ -26,6 +32,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Mount API routes
+app.use('/api/auth', authRouter);
 app.use('/api/transactions', transactionsRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/budgets', budgetsRouter);

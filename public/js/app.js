@@ -47,6 +47,7 @@ function getCategoryMeta(categoryName, type = 'expense') {
 
 // Global App State
 const state = {
+  currentUser: null,
   currency: localStorage.getItem('flowexpense_currency') || '₹',
   theme: localStorage.getItem('flowexpense_theme') || 'dark',
   filters: {
@@ -71,7 +72,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(state.theme);
   setupCurrencyDropdown();
   setupEventListeners();
+  setupAuthEventListeners();
   updateGreetingDate();
+  await initAuth();
   await refreshAllData();
 });
 
@@ -111,6 +114,11 @@ function updateCurrencySymbolDisplays() {
 // ==========================================================================
 
 async function refreshAllData() {
+  if (!api.isAuthenticated()) {
+    renderGuestState();
+    return;
+  }
+
   try {
     const [stats, transactions, budgets, goals] = await Promise.all([
       api.getStats(),
@@ -131,7 +139,11 @@ async function refreshAllData() {
     renderTransactions();
   } catch (err) {
     console.error('Error refreshing data:', err);
-    showToast('Failed to load financial records from server', 'error');
+    if (!api.isAuthenticated()) {
+      renderGuestState();
+    } else {
+      showToast('Failed to load financial records from server', 'error');
+    }
   }
 }
 
@@ -578,8 +590,32 @@ function setupEventListeners() {
   // Data Tools Modal Openers
   const btnDataTools = document.getElementById('btn-open-data-tools');
   const btnFooterBackup = document.getElementById('btn-footer-backup');
-  if (btnDataTools) btnDataTools.addEventListener('click', () => openModal('modal-data-tools'));
-  if (btnFooterBackup) btnFooterBackup.addEventListener('click', () => openModal('modal-data-tools'));
+  if (btnDataTools) {
+    btnDataTools.addEventListener('click', () => {
+      if (!api.isAuthenticated()) {
+        showToast('Please sign in to access data tools', 'info');
+        openAuthModal('login');
+        return;
+      }
+      openModal('modal-data-tools');
+    });
+  }
+  if (btnFooterBackup) {
+    btnFooterBackup.addEventListener('click', () => {
+      if (!api.isAuthenticated()) {
+        showToast('Please sign in to access data tools', 'info');
+        openAuthModal('login');
+        return;
+      }
+      openModal('modal-data-tools');
+    });
+  }
+
+  // Export Buttons
+  const btnExportCsv = document.getElementById('btn-export-csv');
+  const btnExportJson = document.getElementById('btn-export-json');
+  if (btnExportCsv) btnExportCsv.addEventListener('click', () => downloadExport('csv'));
+  if (btnExportJson) btnExportJson.addEventListener('click', () => downloadExport('json'));
 
   // Data Import Handling
   const backupInput = document.getElementById('backup-file-input');
@@ -637,7 +673,8 @@ function setupModalCloseButtons() {
     { modalId: 'modal-budgets', closeBtns: ['btn-close-budget-modal', 'btn-cancel-budget-modal'] },
     { modalId: 'modal-goal', closeBtns: ['btn-close-goal-modal', 'btn-cancel-goal-modal'] },
     { modalId: 'modal-data-tools', closeBtns: ['btn-close-data-modal', 'btn-close-data-modal-foot'] },
-    { modalId: 'modal-confirm-delete', closeBtns: ['btn-close-del-modal', 'btn-cancel-del'] }
+    { modalId: 'modal-confirm-delete', closeBtns: ['btn-close-del-modal', 'btn-cancel-del'] },
+    { modalId: 'modal-auth', closeBtns: ['btn-close-auth-modal'] }
   ];
 
   modals.forEach(({ modalId, closeBtns }) => {
@@ -681,6 +718,12 @@ function populateCategoryOptions(type = 'expense', selectedCategory = '') {
 }
 
 function openAddTxModal() {
+  if (!api.isAuthenticated()) {
+    showToast('Please sign in to add transactions', 'info');
+    openAuthModal('login');
+    return;
+  }
+
   const title = document.getElementById('modal-tx-title');
   const form = document.getElementById('form-transaction');
   const idInput = document.getElementById('tx-id-input');
@@ -788,6 +831,12 @@ function confirmDeleteTx(txId) {
 // ==========================================================================
 
 function openBudgetModal() {
+  if (!api.isAuthenticated()) {
+    showToast('Please sign in to adjust your budgets', 'info');
+    openAuthModal('login');
+    return;
+  }
+
   const container = document.getElementById('budget-inputs-container');
   if (!container) return;
 
@@ -839,6 +888,12 @@ async function handleBudgetSubmit(e) {
 // ==========================================================================
 
 function openAddGoalModal() {
+  if (!api.isAuthenticated()) {
+    showToast('Please sign in to set savings goals', 'info');
+    openAuthModal('login');
+    return;
+  }
+
   const form = document.getElementById('form-goal');
   const title = document.getElementById('modal-goal-title');
   const idInput = document.getElementById('goal-id-input');
@@ -938,9 +993,16 @@ async function executeDeleteItem() {
 }
 
 async function handleLoadSeedData() {
+  if (!api.isAuthenticated()) {
+    showToast('Please sign in to load demo data into your private account', 'info');
+    openAuthModal('login');
+    return;
+  }
+
   try {
+    showToast('Loading rich sample financial data...', 'info');
     await api.seedDemoData();
-    showToast('Rich demo financial dataset loaded!', 'success');
+    showToast('Rich demo financial dataset loaded successfully!', 'success');
     await refreshAllData();
   } catch (err) {
     showToast(`Failed to load demo data: ${err.message}`, 'error');
@@ -948,6 +1010,12 @@ async function handleLoadSeedData() {
 }
 
 async function handleBackupRestore() {
+  if (!api.isAuthenticated()) {
+    showToast('Please sign in to restore backups into your account', 'info');
+    openAuthModal('login');
+    return;
+  }
+
   const fileInput = document.getElementById('backup-file-input');
   if (!fileInput || !fileInput.files.length) return;
 
@@ -967,6 +1035,336 @@ async function handleBackupRestore() {
   };
 
   reader.readAsText(file);
+}
+
+async function downloadExport(format) {
+  if (!api.isAuthenticated()) {
+    showToast('Please sign in to export your records', 'info');
+    openAuthModal('login');
+    return;
+  }
+
+  try {
+    showToast(`Generating ${format.toUpperCase()} export...`, 'info');
+    const token = api.getToken();
+    const res = await fetch(`/api/export?format=${format}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Export request failed');
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = format === 'csv' ? 'flowexpense-transactions.csv' : 'flowexpense-backup.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`${format.toUpperCase()} export downloaded successfully`, 'success');
+  } catch (err) {
+    console.error('Export error:', err);
+    showToast('Export failed: ' + err.message, 'error');
+  }
+}
+
+// ==========================================================================
+// Authentication & Multi-User Handlers
+// ==========================================================================
+
+async function initAuth() {
+  if (api.isAuthenticated()) {
+    try {
+      const user = await api.getCurrentUser();
+      if (user) {
+        state.currentUser = user;
+        if (user.currency) {
+          state.currency = user.currency;
+          setupCurrencyDropdown();
+        }
+        if (user.theme) {
+          applyTheme(user.theme);
+        }
+        updateAuthUI();
+        return;
+      }
+    } catch (err) {
+      console.warn('Auth check failed:', err);
+    }
+  }
+
+  // Guest / Unauthenticated
+  state.currentUser = null;
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  const btnOpenAuth = document.getElementById('btn-open-auth');
+  const userMenu = document.getElementById('user-profile-menu');
+  const guestBanner = document.getElementById('guest-welcome-banner');
+  const greetingTitle = document.getElementById('greeting-title');
+
+  if (state.currentUser) {
+    if (btnOpenAuth) btnOpenAuth.classList.add('hidden');
+    if (userMenu) userMenu.classList.remove('hidden');
+    if (guestBanner) guestBanner.classList.add('hidden');
+
+    const displayName = state.currentUser.name || 'Account';
+    const initial = displayName.charAt(0).toUpperCase();
+
+    const avatarEl = document.getElementById('user-avatar-initial');
+    const nameEl = document.getElementById('user-display-name');
+    const dropNameEl = document.getElementById('dropdown-user-name');
+    const dropEmailEl = document.getElementById('dropdown-user-email');
+
+    if (avatarEl) avatarEl.textContent = initial;
+    if (nameEl) nameEl.textContent = displayName.split(' ')[0];
+    if (dropNameEl) dropNameEl.textContent = displayName;
+    if (dropEmailEl) dropEmailEl.textContent = state.currentUser.email || '';
+    if (greetingTitle) greetingTitle.textContent = `Welcome back, ${displayName.split(' ')[0]}!`;
+  } else {
+    if (btnOpenAuth) btnOpenAuth.classList.remove('hidden');
+    if (userMenu) userMenu.classList.add('hidden');
+    if (guestBanner) guestBanner.classList.remove('hidden');
+    if (greetingTitle) greetingTitle.textContent = 'Welcome to FlowExpense';
+  }
+}
+
+function renderGuestState() {
+  state.stats = {
+    netBalance: 0,
+    totalNetWorth: 0,
+    thisMonthIncome: 0,
+    thisMonthExpense: 0,
+    thisMonthInvestment: 0,
+    thisMonthSavings: 0,
+    savingsRate: 0,
+    categoryBreakdown: [],
+    investmentBreakdown: [],
+    monthlyCashFlow: []
+  };
+  state.transactions = [];
+  state.budgets = [];
+  state.goals = [];
+
+  renderKPIs();
+  renderCharts();
+  renderBudgets();
+  renderGoals();
+  renderTransactions();
+}
+
+function openAuthModal(defaultTab = 'login') {
+  const alertEl = document.getElementById('auth-alert');
+  if (alertEl) alertEl.classList.add('hidden');
+
+  switchAuthTab(defaultTab);
+  openModal('modal-auth');
+
+  if (defaultTab === 'login') {
+    const emailInput = document.getElementById('login-email');
+    if (emailInput) setTimeout(() => emailInput.focus(), 150);
+  } else {
+    const nameInput = document.getElementById('reg-name');
+    if (nameInput) setTimeout(() => nameInput.focus(), 150);
+  }
+}
+
+function switchAuthTab(tab) {
+  const tabLogin = document.getElementById('tab-btn-login');
+  const tabReg = document.getElementById('tab-btn-register');
+  const formLogin = document.getElementById('form-login');
+  const formReg = document.getElementById('form-register');
+  const alertEl = document.getElementById('auth-alert');
+  if (alertEl) alertEl.classList.add('hidden');
+
+  if (tab === 'register') {
+    if (tabLogin) { tabLogin.classList.remove('active'); tabLogin.setAttribute('aria-selected', 'false'); }
+    if (tabReg) { tabReg.classList.add('active'); tabReg.setAttribute('aria-selected', 'true'); }
+    if (formLogin) formLogin.classList.add('hidden');
+    if (formReg) formReg.classList.remove('hidden');
+  } else {
+    if (tabLogin) { tabLogin.classList.add('active'); tabLogin.setAttribute('aria-selected', 'true'); }
+    if (tabReg) { tabReg.classList.remove('active'); tabReg.setAttribute('aria-selected', 'false'); }
+    if (formLogin) formLogin.classList.remove('hidden');
+    if (formReg) formReg.classList.add('hidden');
+  }
+}
+
+function showAuthAlert(message, type = 'error') {
+  const alertEl = document.getElementById('auth-alert');
+  if (!alertEl) return;
+  alertEl.className = `auth-alert ${type}`;
+  alertEl.innerHTML = `<i class="fa-solid fa-${type === 'error' ? 'circle-exclamation' : 'circle-check'}"></i> <span>${escapeHtml(message)}</span>`;
+  alertEl.classList.remove('hidden');
+}
+
+function setupAuthEventListeners() {
+  // Modal Openers
+  const btnOpenAuth = document.getElementById('btn-open-auth');
+  if (btnOpenAuth) btnOpenAuth.addEventListener('click', () => openAuthModal('login'));
+
+  const btnGuestBannerAuth = document.getElementById('btn-guest-banner-auth');
+  if (btnGuestBannerAuth) btnGuestBannerAuth.addEventListener('click', () => openAuthModal('register'));
+
+  // Tab switches
+  const tabLogin = document.getElementById('tab-btn-login');
+  const tabReg = document.getElementById('tab-btn-register');
+  if (tabLogin) tabLogin.addEventListener('click', () => switchAuthTab('login'));
+  if (tabReg) tabReg.addEventListener('click', () => switchAuthTab('register'));
+
+  const linkSwitchToReg = document.getElementById('link-switch-to-register');
+  const linkSwitchToLogin = document.getElementById('link-switch-to-login');
+  if (linkSwitchToReg) linkSwitchToReg.addEventListener('click', () => switchAuthTab('register'));
+  if (linkSwitchToLogin) linkSwitchToLogin.addEventListener('click', () => switchAuthTab('login'));
+
+  // User Profile Dropdown
+  const btnUserMenu = document.getElementById('btn-user-menu');
+  const dropdownMenu = document.getElementById('user-dropdown-menu');
+  if (btnUserMenu && dropdownMenu) {
+    btnUserMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdownMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', () => {
+      dropdownMenu.classList.add('hidden');
+    });
+  }
+
+  // Logout
+  const btnLogout = document.getElementById('btn-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+      api.clearToken();
+      state.currentUser = null;
+      if (dropdownMenu) dropdownMenu.classList.add('hidden');
+      updateAuthUI();
+      renderGuestState();
+      showToast('You have been signed out safely', 'info');
+      openAuthModal('login');
+    });
+  }
+
+  // Handle Token Expiration
+  window.addEventListener('auth:expired', () => {
+    api.clearToken();
+    state.currentUser = null;
+    updateAuthUI();
+    renderGuestState();
+    showToast('Your session has expired. Please sign in again.', 'error');
+    openAuthModal('login');
+  });
+
+  // Login Form Submission
+  const formLogin = document.getElementById('form-login');
+  if (formLogin) {
+    formLogin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const btnSubmit = document.getElementById('btn-submit-login');
+
+      if (!email || !password) {
+        showAuthAlert('Please enter both email and password', 'error');
+        return;
+      }
+
+      try {
+        if (btnSubmit) {
+          btnSubmit.disabled = true;
+          btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...';
+        }
+
+        const res = await api.login({ email, password });
+        state.currentUser = res.user;
+        if (res.user.currency) {
+          state.currency = res.user.currency;
+          setupCurrencyDropdown();
+        }
+        if (res.user.theme) {
+          applyTheme(res.user.theme);
+        }
+
+        updateAuthUI();
+        closeModal('modal-auth');
+        showToast(`Welcome back, ${res.user.name}!`, 'success');
+        formLogin.reset();
+        await refreshAllData();
+      } catch (err) {
+        showAuthAlert(err.message || 'Login failed', 'error');
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In to My Account';
+        }
+      }
+    });
+  }
+
+  // Register Form Submission
+  const formRegister = document.getElementById('form-register');
+  if (formRegister) {
+    formRegister.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const currency = document.getElementById('reg-currency').value;
+      const btnSubmit = document.getElementById('btn-submit-register');
+
+      if (!name) {
+        showAuthAlert('Please enter your full name', 'error');
+        return;
+      }
+      if (!email || !email.includes('@')) {
+        showAuthAlert('Please enter a valid email address', 'error');
+        return;
+      }
+      if (!password || password.length < 6) {
+        showAuthAlert('Password must be at least 6 characters long', 'error');
+        return;
+      }
+
+      try {
+        if (btnSubmit) {
+          btnSubmit.disabled = true;
+          btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating Account...';
+        }
+
+        const res = await api.register({
+          name,
+          email,
+          password,
+          currency,
+          theme: state.theme
+        });
+
+        state.currentUser = res.user;
+        state.currency = res.user.currency || currency;
+        setupCurrencyDropdown();
+
+        updateAuthUI();
+        closeModal('modal-auth');
+        showToast(`Account created! Welcome to FlowExpense, ${res.user.name}.`, 'success');
+        formRegister.reset();
+        await refreshAllData();
+      } catch (err) {
+        showAuthAlert(err.message || 'Registration failed', 'error');
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create Free Account';
+        }
+      }
+    });
+  }
 }
 
 // ==========================================================================
