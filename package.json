@@ -1,0 +1,28 @@
+{
+  "name": "expense-tracker-app",
+  "version": "1.0.0",
+  "description": "Personal Expense Tracker with interactive analytics, budgets, and Node.js backend",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test_backend.js && node verify_endpoints.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "expense-tracker",
+    "finance",
+    "budget",
+    "nodejs",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}

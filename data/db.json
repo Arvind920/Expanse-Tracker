@@ -1,0 +1,21 @@
+{
+  "transactions": [
+    {
+      "id": "tx-0173b4d3",
+      "type": "income",
+      "amount": 50000,
+      "category": "Salary",
+      "date": "2026-10-01",
+      "paymentMethod": "Credit Card",
+      "note": "",
+      "createdAt": "2026-10-11T13:34:25.457Z"
+    }
+  ],
+  "budgets": {},
+  "goals": [],
+  "settings": {
+    "currency": "₹",
+    "theme": "dark",
+    "dateFormat": "YYYY-MM-DD"
+  }
+}

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FlowExpense - Personal Expense & Wealth Tracker. Monitor your income, analyze category spending, track monthly budgets and achieve savings goals.">
+  <title>FlowExpense — Modern Personal Expense & Wealth Tracker</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons for clean UI symbols -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Header / Navbar -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="brand">
+          <div class="brand-logo">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-title">Flow<span>Expense</span></h1>
+            <span class="brand-tagline">Personal Wealth & Budget Tracker</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <!-- Currency Picker -->
+          <div class="control-group">
+            <label for="currency-select" class="sr-only">Currency</label>
+            <div class="select-wrapper">
+              <i class="fa-solid fa-coins select-icon"></i>
+              <select id="currency-select" aria-label="Select Currency">
+                <option value="₹" selected>INR (₹)</option>
+                <option value="$">USD ($)</option>
+                <option value="€">EUR (€)</option>
+                <option value="£">GBP (£)</option>
+                <option value="¥">JPY (¥)</option>
+                <option value="C$">CAD (C$)</option>
+                <option value="A$">AUD (A$)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Theme Toggle -->
+          <button id="btn-theme-toggle" class="btn-icon" aria-label="Toggle Theme" title="Toggle Light / Dark Mode">
+            <i class="fa-solid fa-moon theme-icon-dark"></i>
+            <i class="fa-solid fa-sun theme-icon-light"></i>
+          </button>
+
+          <!-- Data Tools Button -->
+          <button id="btn-open-data-tools" class="btn btn-secondary" title="Export, Import, or Reset Data">
+            <i class="fa-solid fa-database"></i>
+            <span class="btn-text">Data Tools</span>
+          </button>
+
+          <!-- Primary Add Transaction Button -->
+          <button id="btn-add-transaction" class="btn btn-primary" title="Add New Transaction">
+            <i class="fa-solid fa-plus"></i>
+            <span class="btn-text">Add Transaction</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <div class="content-container">
+
+        <!-- Top Greeting & Date Banner -->
+        <div class="greeting-banner">
+          <div class="greeting-text">
+            <h2 id="greeting-title">Welcome back!</h2>
+            <p id="greeting-date">Tracking your financial freedom and cash flow</p>
+          </div>
+          <div class="banner-quick-actions">
+            <button id="btn-quick-seed" class="btn-ghost" title="Reset sample transactions for demonstration">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Load Sample Data
+            </button>
+            <button id="btn-manage-budgets" class="btn-ghost" title="Adjust category budget limits">
+              <i class="fa-solid fa-sliders"></i> Adjust Budgets
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Metric Cards Grid -->
+        <section class="kpi-grid" aria-label="Financial Summary Cards">
+          <!-- Net Balance Card -->
+          <article class="kpi-card card-balance">
+            <div class="kpi-card-header">
+              <span class="kpi-label">Net Balance</span>
+              <div class="kpi-icon-wrap icon-balance">
+                <i class="fa-solid fa-scale-balanced"></i>
+              </div>
+            </div>
+            <div class="kpi-value-wrap">
+              <h3 id="kpi-total-balance" class="kpi-value">₹0.00</h3>
+            </div>
+            <div class="kpi-footer">
+              <span class="kpi-trend positive" id="kpi-balance-note">
+                <i class="fa-solid fa-arrow-trend-up"></i> All-time net worth
+              </span>
+            </div>
+          </article>
+
+          <!-- Total Income Card -->
+          <article class="kpi-card card-income">
+            <div class="kpi-card-header">
+              <span class="kpi-label">This Month's Income</span>
+              <div class="kpi-icon-wrap icon-income">
+                <i class="fa-solid fa-arrow-down-left"></i>
+              </div>
+            </div>
+            <div class="kpi-value-wrap">
+              <h3 id="kpi-month-income" class="kpi-value text-success">+₹0.00</h3>
+            </div>
+            <div class="kpi-footer">
+              <span class="kpi-subtext" id="kpi-total-income-all">Total all time: ₹0.00</span>
+            </div>
+          </article>
+
+          <!-- Total Expense Card -->
+          <article class="kpi-card card-expense">
+            <div class="kpi-card-header">
+              <span class="kpi-label">This Month's Expenses</span>
+              <div class="kpi-icon-wrap icon-expense">
+                <i class="fa-solid fa-arrow-up-right"></i>
+              </div>
+            </div>
+            <div class="kpi-value-wrap">
+              <h3 id="kpi-month-expense" class="kpi-value text-danger">-₹0.00</h3>
+            </div>
+            <div class="kpi-footer">
+              <span class="kpi-subtext" id="kpi-total-expense-all">Total all time: ₹0.00</span>
+            </div>
+          </article>
+
+          <!-- Savings Rate Card -->
+          <article class="kpi-card card-savings">
+            <div class="kpi-card-header">
+              <span class="kpi-label">Monthly Savings Rate</span>
+              <div class="kpi-icon-wrap icon-savings">
+                <i class="fa-solid fa-piggy-bank"></i>
+              </div>
+            </div>
+            <div class="kpi-value-wrap">
+              <h3 id="kpi-savings-rate" class="kpi-value text-accent">0%</h3>
+            </div>
+            <div class="kpi-footer">
+              <span id="kpi-net-savings" class="kpi-subtext">Net saved: ₹0.00</span>
+            </div>
+          </article>
+        </section>
+
+        <!-- Analytics Visualizations Grid -->
+        <section class="charts-grid" aria-label="Visual Analytics">
+          <!-- Expense Breakdown Chart Card -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3 class="card-title">Expense Breakdown</h3>
+                <p class="card-subtitle">Spending distribution by category this month</p>
+              </div>
+              <span class="badge badge-primary" id="chart-total-categories">0 Categories</span>
+            </div>
+            <div class="card-body chart-body">
+              <div class="doughnut-container">
+                <canvas id="categoryChart"></canvas>
+              </div>
+              <div id="category-legend-list" class="custom-legend-list">
+                <!-- Dynamically populated category legend -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Cash Flow Trend Chart Card -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3 class="card-title">6-Month Cash Flow</h3>
+                <p class="card-subtitle">Income vs Expenses historical comparison</p>
+              </div>
+              <div class="legend-pills">
+                <span class="legend-pill income-pill"><span class="dot"></span> Income</span>
+                <span class="legend-pill expense-pill"><span class="dot"></span> Expense</span>
+              </div>
+            </div>
+            <div class="card-body chart-body">
+              <div class="bar-chart-container">
+                <canvas id="cashFlowChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Budgets & Savings Goals Grid -->
+        <section class="budgets-goals-grid" aria-label="Budgets and Financial Goals">
+          <!-- Category Budgets Card -->
+          <div class="card budgets-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3 class="card-title">Monthly Category Budgets</h3>
+                <p class="card-subtitle">Track your limits and avoid overspending</p>
+              </div>
+              <button id="btn-quick-edit-budgets" class="btn btn-sm btn-ghost">
+                <i class="fa-solid fa-pen-to-square"></i> Set Limits
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="budgets-list" class="budgets-list">
+                <!-- Dynamically generated budget progress items -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Savings Goals Card -->
+          <div class="card goals-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3 class="card-title">Savings Goals</h3>
+                <p class="card-subtitle">Target milestones for your financial ambitions</p>
+              </div>
+              <button id="btn-add-goal" class="btn btn-sm btn-secondary">
+                <i class="fa-solid fa-plus"></i> New Goal
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="goals-list" class="goals-list">
+                <!-- Dynamically generated goal cards -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Transactions Section -->
+        <section class="card transactions-section" aria-label="Transactions History">
+          <div class="transactions-header">
+            <div class="card-title-group">
+              <h3 class="card-title">Transaction History</h3>
+              <p class="card-subtitle" id="tx-count-label">Showing all logged transactions</p>
+            </div>
+
+            <!-- Filters & Search Toolbar -->
+            <div class="transactions-toolbar">
+              <!-- Type Filter Tabs -->
+              <div class="tabs-filter" role="tablist">
+                <button class="tab-btn active" data-type="all" id="filter-type-all">All</button>
+                <button class="tab-btn" data-type="expense" id="filter-type-expense">Expenses</button>
+                <button class="tab-btn" data-type="income" id="filter-type-income">Income</button>
+              </div>
+
+              <!-- Search Bar -->
+              <div class="search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="tx-search-input" placeholder="Search note, category, method..." autocomplete="off">
+                <button id="btn-clear-search" class="btn-clear-search hidden" title="Clear search">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <!-- Category Filter Dropdown -->
+              <div class="select-wrapper filter-select">
+                <select id="tx-category-filter" aria-label="Filter by Category">
+                  <option value="all">All Categories</option>
+                  <option value="Food & Dining">Food & Dining</option>
+                  <option value="Shopping">Shopping</option>
+                  <option value="Housing">Housing</option>
+                  <option value="Transportation">Transportation</option>
+                  <option value="Bills & Utilities">Bills & Utilities</option>
+                  <option value="Entertainment">Entertainment</option>
+                  <option value="Health & Fitness">Health & Fitness</option>
+                  <option value="Travel">Travel</option>
+                  <option value="Salary">Salary</option>
+                  <option value="Freelance">Freelance</option>
+                  <option value="Investments">Investments</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <!-- Sort Order -->
+              <div class="select-wrapper filter-select">
+                <select id="tx-sort-select" aria-label="Sort Transactions">
+                  <option value="date-desc" selected>Newest First</option>
+                  <option value="date-asc">Oldest First</option>
+                  <option value="amount-desc">Highest Amount</option>
+                  <option value="amount-asc">Lowest Amount</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transactions Table Container -->
+          <div class="transactions-table-container">
+            <table class="transactions-table" id="transactions-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Description & Details</th>
+                  <th>Date</th>
+                  <th>Payment Method</th>
+                  <th class="text-right">Amount</th>
+                  <th class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-tbody">
+                <!-- Dynamically rendered rows -->
+              </tbody>
+            </table>
+
+            <!-- Empty State Display -->
+            <div id="tx-empty-state" class="empty-state hidden">
+              <div class="empty-icon">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+              <h4>No transactions found</h4>
+              <p>Try clearing your filters or add your first transaction to get started.</p>
+              <button id="btn-empty-add-tx" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus"></i> Add Transaction
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-container">
+        <p>&copy; 2026 FlowExpense. Modern Personal Finance App powered by Node.js & Express.</p>
+        <div class="footer-links">
+          <button id="btn-footer-backup" class="footer-link-btn"><i class="fa-solid fa-cloud-arrow-down"></i> Backup</button>
+          <button id="btn-footer-seed" class="footer-link-btn"><i class="fa-solid fa-rotate-right"></i> Reset Demo</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 1. Add / Edit Transaction Modal -->
+  <div id="modal-transaction" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-tx-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-tx-title" class="modal-title">Add Transaction</h3>
+          <button class="modal-close" id="btn-close-tx-modal" aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <form id="form-transaction" class="modal-form">
+          <input type="hidden" id="tx-id-input" value="">
+
+          <!-- Transaction Type Toggle -->
+          <div class="form-group">
+            <label class="form-label">Transaction Type</label>
+            <div class="type-toggle-group">
+              <label class="type-radio-label expense-label">
+                <input type="radio" name="tx-type" value="expense" checked id="radio-type-expense">
+                <span class="type-badge"><i class="fa-solid fa-minus"></i> Expense</span>
+              </label>
+              <label class="type-radio-label income-label">
+                <input type="radio" name="tx-type" value="income" id="radio-type-income">
+                <span class="type-badge"><i class="fa-solid fa-plus"></i> Income</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Amount -->
+          <div class="form-group">
+            <label for="tx-amount-input" class="form-label">Amount <span class="required">*</span></label>
+            <div class="input-prefix-wrapper">
+              <span class="currency-symbol-addon" id="modal-currency-symbol">₹</span>
+              <input type="number" id="tx-amount-input" step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div class="form-group">
+            <label for="tx-category-input" class="form-label">Category <span class="required">*</span></label>
+            <select id="tx-category-input" class="form-select" required>
+              <!-- Categories dynamically adjusted based on income/expense -->
+            </select>
+          </div>
+
+          <!-- Date -->
+          <div class="form-group">
+            <label for="tx-date-input" class="form-label">Date <span class="required">*</span></label>
+            <input type="date" id="tx-date-input" class="form-input" required>
+          </div>
+
+          <!-- Payment Method -->
+          <div class="form-group">
+            <label for="tx-payment-method" class="form-label">Payment Method</label>
+            <select id="tx-payment-method" class="form-select">
+              <option value="Credit Card">Credit Card</option>
+              <option value="Debit Card">Debit Card</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+              <option value="UPI / Mobile Pay">UPI / Mobile Pay</option>
+              <option value="Crypto">Crypto</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <!-- Note / Description -->
+          <div class="form-group">
+            <label for="tx-note-input" class="form-label">Note / Description</label>
+            <input type="text" id="tx-note-input" class="form-input" placeholder="e.g. Grocery trip to Costco, Client payment" maxlength="150">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-tx-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-tx">
+              <i class="fa-solid fa-check"></i> Save Transaction
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Set Category Budgets Modal -->
+  <div id="modal-budgets" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-budget-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-budget-title" class="modal-title">Monthly Category Budgets</h3>
+          <button class="modal-close" id="btn-close-budget-modal" aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <form id="form-budgets" class="modal-form">
+          <p class="modal-description">Set your monthly spending ceilings. You'll receive real-time warning indicators when approaching or exceeding limits.</p>
+          <div id="budget-inputs-container" class="budget-inputs-grid">
+            <!-- Dynamically populated budget input fields -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-budget-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-budgets">
+              <i class="fa-solid fa-check"></i> Save Budgets
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Add / Edit Savings Goal Modal -->
+  <div id="modal-goal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-goal-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-goal-title" class="modal-title">Add Savings Goal</h3>
+          <button class="modal-close" id="btn-close-goal-modal" aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <form id="form-goal" class="modal-form">
+          <input type="hidden" id="goal-id-input" value="">
+
+          <div class="form-group">
+            <label for="goal-name-input" class="form-label">Goal Name <span class="required">*</span></label>
+            <input type="text" id="goal-name-input" class="form-input" placeholder="e.g. Dream House Down Payment" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="goal-target-input" class="form-label">Target Amount <span class="required">*</span></label>
+              <input type="number" id="goal-target-input" class="form-input" min="1" step="0.01" placeholder="10000" required>
+            </div>
+            <div class="form-group">
+              <label for="goal-current-input" class="form-label">Current Saved Amount</label>
+              <input type="number" id="goal-current-input" class="form-input" min="0" step="0.01" placeholder="0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="goal-date-input" class="form-label">Target Date</label>
+              <input type="date" id="goal-date-input" class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="goal-color-input" class="form-label">Accent Color</label>
+              <input type="color" id="goal-color-input" class="form-color-picker" value="#10B981">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-goal-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-goal">
+              <i class="fa-solid fa-check"></i> Save Goal
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Data Tools Modal (Export / Import / Backup / Reset) -->
+  <div id="modal-data-tools" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-data-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-data-title" class="modal-title">Data Management & Backup</h3>
+          <button class="modal-close" id="btn-close-data-modal" aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="data-tool-section">
+            <h4><i class="fa-solid fa-file-export"></i> Export Financial Data</h4>
+            <p>Download your transactions and records to use in Excel, Google Sheets, or as a secure backup.</p>
+            <div class="tool-btn-row">
+              <a href="/api/export?format=csv" class="btn btn-secondary btn-sm" download="flowexpense-transactions.csv">
+                <i class="fa-solid fa-file-csv"></i> Export as CSV
+              </a>
+              <a href="/api/export?format=json" class="btn btn-secondary btn-sm" download="flowexpense-backup.json">
+                <i class="fa-solid fa-file-code"></i> Export as JSON
+              </a>
+            </div>
+          </div>
+
+          <hr class="modal-divider">
+
+          <div class="data-tool-section">
+            <h4><i class="fa-solid fa-file-import"></i> Restore from JSON Backup</h4>
+            <p>Restore all transactions, budgets, and goals from a previously exported JSON backup file.</p>
+            <div class="import-file-wrapper">
+              <input type="file" id="backup-file-input" accept=".json" class="file-input">
+              <button id="btn-upload-backup" class="btn btn-primary btn-sm" disabled>
+                <i class="fa-solid fa-upload"></i> Restore Backup
+              </button>
+            </div>
+          </div>
+
+          <hr class="modal-divider">
+
+          <div class="data-tool-section danger-zone">
+            <h4><i class="fa-solid fa-triangle-exclamation"></i> Demo Data & Reset</h4>
+            <p>Load full sample datasets with realistic multi-month expenses or clear out existing logs.</p>
+            <button id="btn-modal-load-seed" class="btn btn-ghost btn-sm">
+              <i class="fa-solid fa-rotate-right"></i> Reload Rich Demo Dataset
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-close-data-modal-foot">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="modal-confirm-delete" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-del-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-del-title" class="modal-title text-danger">Delete Confirmation</h3>
+          <button class="modal-close" id="btn-close-del-modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-del-message">Are you sure you want to permanently delete this item?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-del">Cancel</button>
+          <button type="button" class="btn btn-danger" id="btn-confirm-del">
+            <i class="fa-solid fa-trash-can"></i> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Center -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Frontend Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
