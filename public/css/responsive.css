@@ -2,6 +2,13 @@
    FlowExpense - Responsive Layout Breakpoints
    ========================================================================== */
 
+/* Intermediate Desktops & Tablets (max-width: 1200px) */
+@media (max-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 /* Large Tablets & Small Laptops (max-width: 1024px) */
 @media (max-width: 1024px) {
   .kpi-grid {

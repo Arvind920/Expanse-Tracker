@@ -419,8 +419,8 @@ body {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.15rem;
 }
 
 .kpi-card {
@@ -451,6 +451,7 @@ body {
 .card-balance::before { background: var(--accent-gradient); }
 .card-income::before { background: var(--success); }
 .card-expense::before { background: var(--danger); }
+.card-investment::before { background: var(--info); }
 .card-savings::before { background: var(--accent-secondary); }
 
 .kpi-card:hover {
@@ -490,6 +491,7 @@ body {
 .icon-balance { background: rgba(99, 102, 241, 0.15); color: #818CF8; }
 .icon-income { background: var(--success-bg); color: var(--success); }
 .icon-expense { background: var(--danger-bg); color: var(--danger); }
+.icon-investment { background: var(--info-bg); color: var(--info); }
 .icon-savings { background: rgba(139, 92, 246, 0.15); color: #A78BFA; }
 
 .kpi-value-wrap {
@@ -506,6 +508,7 @@ body {
 
 .text-success { color: var(--success) !important; }
 .text-danger { color: var(--danger) !important; }
+.text-investment { color: var(--info) !important; }
 .text-accent { color: var(--accent-secondary) !important; }
 
 .kpi-footer {
@@ -683,6 +686,7 @@ body {
 
 .income-pill .dot { background: var(--success); }
 .expense-pill .dot { background: var(--danger); }
+.investment-pill .dot { background: var(--info); }
 
 /* ==========================================================================
    Budgets & Savings Goals Grid
@@ -1066,6 +1070,7 @@ body {
 
 .tx-amount.income { color: var(--success); }
 .tx-amount.expense { color: var(--danger); }
+.tx-amount.investment { color: var(--info); }
 
 .text-right { text-align: right; }
 .text-center { text-align: center; }
@@ -1283,8 +1288,8 @@ body {
 
 .type-toggle-group {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
 }
 
 .type-radio-label {
@@ -1320,6 +1325,12 @@ body {
   background: var(--success-bg);
   border-color: var(--success);
   color: var(--success);
+}
+
+.investment-label input:checked + .type-badge {
+  background: var(--info-bg);
+  border-color: var(--info);
+  color: var(--info);
 }
 
 .input-prefix-wrapper {

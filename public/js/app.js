@@ -3,6 +3,7 @@
 // Category definitions with icons
 const categoryDefinitions = {
   expense: [
+    { name: 'EMIs & Loans', icon: 'fa-landmark', color: '#E11D48' },
     { name: 'Food & Dining', icon: 'fa-utensils', color: '#F59E0B' },
     { name: 'Shopping', icon: 'fa-bag-shopping', color: '#EC4899' },
     { name: 'Housing', icon: 'fa-house', color: '#6366F1' },
@@ -13,19 +14,34 @@ const categoryDefinitions = {
     { name: 'Travel', icon: 'fa-plane', color: '#F97316' },
     { name: 'Other', icon: 'fa-ellipsis', color: '#64748B' }
   ],
+  investment: [
+    { name: 'SIP (Mutual Funds)', icon: 'fa-chart-pie', color: '#0284C7' },
+    { name: 'Recurring Deposit (RD)', icon: 'fa-repeat', color: '#06B6D4' },
+    { name: 'Fixed Deposit (FD)', icon: 'fa-vault', color: '#14B8A6' },
+    { name: 'Stocks & Shares', icon: 'fa-arrow-trend-up', color: '#6366F1' },
+    { name: 'PPF / EPF / NPS', icon: 'fa-shield-halved', color: '#8B5CF6' },
+    { name: 'Gold & SGB', icon: 'fa-coins', color: '#D97706' },
+    { name: 'Crypto', icon: 'fa-bitcoin-sign', color: '#EA580C' },
+    { name: 'Other Investment', icon: 'fa-briefcase', color: '#64748B' }
+  ],
   income: [
     { name: 'Salary', icon: 'fa-money-bill-wave', color: '#22C55E' },
     { name: 'Freelance', icon: 'fa-laptop-code', color: '#06B6D4' },
-    { name: 'Investments', icon: 'fa-chart-line', color: '#3B82F6' },
-    { name: 'Other', icon: 'fa-ellipsis', color: '#64748B' }
+    { name: 'Dividends / Returns', icon: 'fa-chart-line', color: '#3B82F6' },
+    { name: 'Other Income', icon: 'fa-ellipsis', color: '#64748B' }
   ]
 };
 
 function getCategoryMeta(categoryName, type = 'expense') {
-  const pool = categoryDefinitions[type] || [...categoryDefinitions.expense, ...categoryDefinitions.income];
+  const allPool = [
+    ...categoryDefinitions.expense,
+    ...categoryDefinitions.investment,
+    ...categoryDefinitions.income
+  ];
+  const pool = categoryDefinitions[type] || allPool;
   const found = pool.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
   if (found) return found;
-  const anyFound = [...categoryDefinitions.expense, ...categoryDefinitions.income].find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+  const anyFound = allPool.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
   return anyFound || { name: categoryName, icon: 'fa-tag', color: '#8B5CF6' };
 }
 
@@ -147,8 +163,11 @@ function renderKPIs() {
   if (!stats) return;
 
   const totalBalanceEl = document.getElementById('kpi-total-balance');
+  const netWorthEl = document.getElementById('kpi-net-worth');
   const monthIncomeEl = document.getElementById('kpi-month-income');
   const monthExpenseEl = document.getElementById('kpi-month-expense');
+  const monthInvestmentEl = document.getElementById('kpi-month-investment');
+  const totalInvestmentAllEl = document.getElementById('kpi-total-investment-all');
   const savingsRateEl = document.getElementById('kpi-savings-rate');
   const netSavingsEl = document.getElementById('kpi-net-savings');
   const totalIncomeAllEl = document.getElementById('kpi-total-income-all');
@@ -156,7 +175,11 @@ function renderKPIs() {
 
   if (totalBalanceEl) {
     const sign = stats.netBalance >= 0 ? '' : '-';
-    totalBalanceEl.textContent = `${sign}${state.currency}${Math.abs(stats.netBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    totalBalanceEl.textContent = `${sign}${formatCurrency(Math.abs(stats.netBalance))}`;
+  }
+
+  if (netWorthEl) {
+    netWorthEl.textContent = formatCurrency(stats.totalNetWorth || (stats.netBalance + (stats.totalInvestmentAllTime || 0)));
   }
 
   if (monthIncomeEl) {
@@ -165,6 +188,14 @@ function renderKPIs() {
 
   if (monthExpenseEl) {
     monthExpenseEl.textContent = `-${formatCurrency(stats.thisMonthExpense)}`;
+  }
+
+  if (monthInvestmentEl) {
+    monthInvestmentEl.textContent = formatCurrency(stats.thisMonthInvestment || 0);
+  }
+
+  if (totalInvestmentAllEl) {
+    totalInvestmentAllEl.textContent = `Total invested: ${formatCurrency(stats.totalInvestmentAllTime || 0)}`;
   }
 
   if (savingsRateEl) {
@@ -346,9 +377,12 @@ function renderTransactions() {
 
   tbody.innerHTML = transactions.map(tx => {
     const isIncome = tx.type === 'income';
+    const isInvestment = tx.type === 'investment';
     const meta = getCategoryMeta(tx.category, tx.type);
     const dateFormatted = tx.date ? new Date(tx.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-    const amountStr = `${isIncome ? '+' : '-'}${formatCurrency(tx.amount)}`;
+    const sign = isIncome ? '+' : isInvestment ? '📈 ' : '-';
+    const amountStr = `${sign}${formatCurrency(tx.amount)}`;
+    const amountClass = isIncome ? 'income' : isInvestment ? 'investment' : 'expense';
 
     return `
       <tr>
@@ -367,7 +401,7 @@ function renderTransactions() {
           </span>
         </td>
         <td class="text-right">
-          <span class="tx-amount ${isIncome ? 'income' : 'expense'}">${amountStr}</span>
+          <span class="tx-amount ${amountClass}">${amountStr}</span>
         </td>
         <td class="text-center">
           <div class="tx-actions-cell">
@@ -442,12 +476,16 @@ function setupEventListeners() {
     btnEmptyAddTx.addEventListener('click', () => openAddTxModal());
   }
 
-  // Transaction Modal Type Radios (Expense vs Income changes available categories)
+  // Transaction Modal Type Radios (Expense vs Income vs Investment changes categories)
   const radioExpense = document.getElementById('radio-type-expense');
   const radioIncome = document.getElementById('radio-type-income');
+  const radioInvestment = document.getElementById('radio-type-investment');
   if (radioExpense && radioIncome) {
     radioExpense.addEventListener('change', () => populateCategoryOptions('expense'));
     radioIncome.addEventListener('change', () => populateCategoryOptions('income'));
+    if (radioInvestment) {
+      radioInvestment.addEventListener('change', () => populateCategoryOptions('investment'));
+    }
   }
 
   // Transaction Form Submit
@@ -681,6 +719,7 @@ function openEditTxModal(txId) {
   const methodInput = document.getElementById('tx-payment-method');
   const radioExpense = document.getElementById('radio-type-expense');
   const radioIncome = document.getElementById('radio-type-income');
+  const radioInvestment = document.getElementById('radio-type-investment');
 
   if (title) title.textContent = 'Edit Transaction';
   if (idInput) idInput.value = tx.id;
@@ -692,6 +731,9 @@ function openEditTxModal(txId) {
   if (tx.type === 'income') {
     if (radioIncome) radioIncome.checked = true;
     populateCategoryOptions('income', tx.category);
+  } else if (tx.type === 'investment') {
+    if (radioInvestment) radioInvestment.checked = true;
+    populateCategoryOptions('investment', tx.category);
   } else {
     if (radioExpense) radioExpense.checked = true;
     populateCategoryOptions('expense', tx.category);

@@ -113,9 +113,12 @@ class DatabaseService {
 
   addTransaction(txData) {
     const data = this.readRaw();
+    const validTypes = ['income', 'expense', 'investment'];
+    const type = validTypes.includes(txData.type) ? txData.type : 'expense';
+
     const newTx = {
       id: txData.id || `tx-${crypto.randomUUID().slice(0, 8)}`,
-      type: txData.type === 'income' ? 'income' : 'expense',
+      type,
       amount: parseFloat(txData.amount) || 0,
       category: txData.category || 'Other',
       date: txData.date || new Date().toISOString().split('T')[0],
@@ -288,10 +291,13 @@ class DatabaseService {
 
     let totalIncomeAllTime = 0;
     let totalExpenseAllTime = 0;
+    let totalInvestmentAllTime = 0;
     let thisMonthIncome = 0;
     let thisMonthExpense = 0;
+    let thisMonthInvestment = 0;
 
     const categoryBreakdown = {};
+    const investmentBreakdown = {};
 
     transactions.forEach(t => {
       const amt = Number(t.amount) || 0;
@@ -300,6 +306,13 @@ class DatabaseService {
       if (t.type === 'income') {
         totalIncomeAllTime += amt;
         if (isThisMonth) thisMonthIncome += amt;
+      } else if (t.type === 'investment') {
+        totalInvestmentAllTime += amt;
+        if (isThisMonth) {
+          thisMonthInvestment += amt;
+          categoryBreakdown[t.category] = (categoryBreakdown[t.category] || 0) + amt;
+          investmentBreakdown[t.category] = (investmentBreakdown[t.category] || 0) + amt;
+        }
       } else {
         totalExpenseAllTime += amt;
         if (isThisMonth) {
@@ -309,9 +322,10 @@ class DatabaseService {
       }
     });
 
-    const netBalance = totalIncomeAllTime - totalExpenseAllTime;
-    const thisMonthSavings = thisMonthIncome - thisMonthExpense;
-    const savingsRate = thisMonthIncome > 0 ? Math.round((thisMonthSavings / thisMonthIncome) * 100) : 0;
+    const netCashBalance = totalIncomeAllTime - totalExpenseAllTime - totalInvestmentAllTime;
+    const totalNetWorth = totalIncomeAllTime - totalExpenseAllTime;
+    const thisMonthSavings = thisMonthIncome - thisMonthExpense - thisMonthInvestment;
+    const savingsRate = thisMonthIncome > 0 ? Math.round(((thisMonthSavings + thisMonthInvestment) / thisMonthIncome) * 100) : 0;
 
     // Monthly cashflow for last 6 months
     const monthlyCashFlow = [];
@@ -324,9 +338,11 @@ class DatabaseService {
 
       let inc = 0;
       let exp = 0;
+      let inv = 0;
       transactions.forEach(t => {
         if (t.date && t.date.startsWith(prefix)) {
           if (t.type === 'income') inc += Number(t.amount);
+          else if (t.type === 'investment') inv += Number(t.amount);
           else exp += Number(t.amount);
         }
       });
@@ -336,7 +352,8 @@ class DatabaseService {
         key: prefix,
         income: Math.round(inc * 100) / 100,
         expense: Math.round(exp * 100) / 100,
-        savings: Math.round((inc - exp) * 100) / 100
+        investment: Math.round(inv * 100) / 100,
+        savings: Math.round((inc - exp - inv) * 100) / 100
       });
     }
 
@@ -344,18 +361,28 @@ class DatabaseService {
     const categoryArray = Object.entries(categoryBreakdown).map(([category, amount]) => ({
       category,
       amount: Math.round(amount * 100) / 100,
-      percentage: thisMonthExpense > 0 ? Math.round((amount / thisMonthExpense) * 100) : 0
+      percentage: (thisMonthExpense + thisMonthInvestment) > 0 ? Math.round((amount / (thisMonthExpense + thisMonthInvestment)) * 100) : 0
+    })).sort((a, b) => b.amount - a.amount);
+
+    const investmentArray = Object.entries(investmentBreakdown).map(([category, amount]) => ({
+      category,
+      amount: Math.round(amount * 100) / 100,
+      percentage: thisMonthInvestment > 0 ? Math.round((amount / thisMonthInvestment) * 100) : 0
     })).sort((a, b) => b.amount - a.amount);
 
     return {
-      netBalance: Math.round(netBalance * 100) / 100,
+      netBalance: Math.round(netCashBalance * 100) / 100,
+      totalNetWorth: Math.round(totalNetWorth * 100) / 100,
       thisMonthIncome: Math.round(thisMonthIncome * 100) / 100,
       thisMonthExpense: Math.round(thisMonthExpense * 100) / 100,
+      thisMonthInvestment: Math.round(thisMonthInvestment * 100) / 100,
       thisMonthSavings: Math.round(thisMonthSavings * 100) / 100,
       savingsRate,
       totalIncomeAllTime: Math.round(totalIncomeAllTime * 100) / 100,
       totalExpenseAllTime: Math.round(totalExpenseAllTime * 100) / 100,
+      totalInvestmentAllTime: Math.round(totalInvestmentAllTime * 100) / 100,
       categoryBreakdown: categoryArray,
+      investmentBreakdown: investmentArray,
       monthlyCashFlow,
       transactionCount: transactions.length
     };

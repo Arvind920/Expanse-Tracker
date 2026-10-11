@@ -1,6 +1,7 @@
 // FlowExpense - Chart.js Visualization Engine
 
 const categoryColors = {
+  'EMIs & Loans': '#E11D48',
   'Food & Dining': '#F59E0B',
   'Shopping': '#EC4899',
   'Housing': '#6366F1',
@@ -11,7 +12,14 @@ const categoryColors = {
   'Travel': '#F97316',
   'Salary': '#22C55E',
   'Freelance': '#06B6D4',
-  'Investments': '#3B82F6',
+  'SIP (Mutual Funds)': '#0284C7',
+  'Recurring Deposit (RD)': '#06B6D4',
+  'Fixed Deposit (FD)': '#14B8A6',
+  'Stocks & Shares': '#6366F1',
+  'PPF / EPF / NPS': '#8B5CF6',
+  'Gold & SGB': '#D97706',
+  'Crypto': '#EA580C',
+  'Other Investment': '#64748B',
   'Other': '#64748B'
 };
 
@@ -114,6 +122,7 @@ const chartsManager = {
     const labels = monthlyData.map(m => m.month);
     const incomeData = monthlyData.map(m => m.income);
     const expenseData = monthlyData.map(m => m.expense);
+    const investmentData = monthlyData.map(m => m.investment || 0);
 
     this.cashFlowChart = new Chart(ctx, {
       type: 'bar',
@@ -125,14 +134,21 @@ const chartsManager = {
             data: incomeData,
             backgroundColor: '#10B981',
             borderRadius: 6,
-            maxBarThickness: 24
+            maxBarThickness: 20
           },
           {
             label: 'Expense',
             data: expenseData,
             backgroundColor: '#F43F5E',
             borderRadius: 6,
-            maxBarThickness: 24
+            maxBarThickness: 20
+          },
+          {
+            label: 'Investment',
+            data: investmentData,
+            backgroundColor: '#0EA5E9',
+            borderRadius: 6,
+            maxBarThickness: 20
           }
         ]
       },

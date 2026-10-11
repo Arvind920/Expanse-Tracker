@@ -100,9 +100,9 @@
           <!-- Net Balance Card -->
           <article class="kpi-card card-balance">
             <div class="kpi-card-header">
-              <span class="kpi-label">Net Balance</span>
+              <span class="kpi-label">Cash In Hand</span>
               <div class="kpi-icon-wrap icon-balance">
-                <i class="fa-solid fa-scale-balanced"></i>
+                <i class="fa-solid fa-wallet"></i>
               </div>
             </div>
             <div class="kpi-value-wrap">
@@ -110,7 +110,7 @@
             </div>
             <div class="kpi-footer">
               <span class="kpi-trend positive" id="kpi-balance-note">
-                <i class="fa-solid fa-arrow-trend-up"></i> All-time net worth
+                <i class="fa-solid fa-vault"></i> Net Worth: <span id="kpi-net-worth">₹0.00</span>
               </span>
             </div>
           </article>
@@ -118,7 +118,7 @@
           <!-- Total Income Card -->
           <article class="kpi-card card-income">
             <div class="kpi-card-header">
-              <span class="kpi-label">This Month's Income</span>
+              <span class="kpi-label">Month Income</span>
               <div class="kpi-icon-wrap icon-income">
                 <i class="fa-solid fa-arrow-down-left"></i>
               </div>
@@ -134,7 +134,7 @@
           <!-- Total Expense Card -->
           <article class="kpi-card card-expense">
             <div class="kpi-card-header">
-              <span class="kpi-label">This Month's Expenses</span>
+              <span class="kpi-label">Month Expenses</span>
               <div class="kpi-icon-wrap icon-expense">
                 <i class="fa-solid fa-arrow-up-right"></i>
               </div>
@@ -147,10 +147,26 @@
             </div>
           </article>
 
+          <!-- Investments / Savings Card -->
+          <article class="kpi-card card-investment">
+            <div class="kpi-card-header">
+              <span class="kpi-label">Investments (SIP/FD/RD)</span>
+              <div class="kpi-icon-wrap icon-investment">
+                <i class="fa-solid fa-chart-line"></i>
+              </div>
+            </div>
+            <div class="kpi-value-wrap">
+              <h3 id="kpi-month-investment" class="kpi-value text-investment">₹0.00</h3>
+            </div>
+            <div class="kpi-footer">
+              <span class="kpi-subtext" id="kpi-total-investment-all">Total invested: ₹0.00</span>
+            </div>
+          </article>
+
           <!-- Savings Rate Card -->
           <article class="kpi-card card-savings">
             <div class="kpi-card-header">
-              <span class="kpi-label">Monthly Savings Rate</span>
+              <span class="kpi-label">Savings Rate</span>
               <div class="kpi-icon-wrap icon-savings">
                 <i class="fa-solid fa-piggy-bank"></i>
               </div>
@@ -195,6 +211,7 @@
               <div class="legend-pills">
                 <span class="legend-pill income-pill"><span class="dot"></span> Income</span>
                 <span class="legend-pill expense-pill"><span class="dot"></span> Expense</span>
+                <span class="legend-pill investment-pill"><span class="dot"></span> Investment</span>
               </div>
             </div>
             <div class="card-body chart-body">
@@ -259,6 +276,7 @@
                 <button class="tab-btn active" data-type="all" id="filter-type-all">All</button>
                 <button class="tab-btn" data-type="expense" id="filter-type-expense">Expenses</button>
                 <button class="tab-btn" data-type="income" id="filter-type-income">Income</button>
+                <button class="tab-btn" data-type="investment" id="filter-type-investment">Investments</button>
               </div>
 
               <!-- Search Bar -->
@@ -274,18 +292,34 @@
               <div class="select-wrapper filter-select">
                 <select id="tx-category-filter" aria-label="Filter by Category">
                   <option value="all">All Categories</option>
-                  <option value="Food & Dining">Food & Dining</option>
-                  <option value="Shopping">Shopping</option>
-                  <option value="Housing">Housing</option>
-                  <option value="Transportation">Transportation</option>
-                  <option value="Bills & Utilities">Bills & Utilities</option>
-                  <option value="Entertainment">Entertainment</option>
-                  <option value="Health & Fitness">Health & Fitness</option>
-                  <option value="Travel">Travel</option>
-                  <option value="Salary">Salary</option>
-                  <option value="Freelance">Freelance</option>
-                  <option value="Investments">Investments</option>
-                  <option value="Other">Other</option>
+                  <optgroup label="Expenses">
+                    <option value="EMIs & Loans">EMIs & Loans</option>
+                    <option value="Food & Dining">Food & Dining</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Housing">Housing</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Bills & Utilities">Bills & Utilities</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Health & Fitness">Health & Fitness</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Other">Other Expense</option>
+                  </optgroup>
+                  <optgroup label="Investments / Savings">
+                    <option value="SIP (Mutual Funds)">SIP (Mutual Funds)</option>
+                    <option value="Recurring Deposit (RD)">Recurring Deposit (RD)</option>
+                    <option value="Fixed Deposit (FD)">Fixed Deposit (FD)</option>
+                    <option value="Stocks & Shares">Stocks & Shares</option>
+                    <option value="PPF / EPF / NPS">PPF / EPF / NPS</option>
+                    <option value="Gold & SGB">Gold & SGB</option>
+                    <option value="Crypto">Crypto</option>
+                    <option value="Other Investment">Other Investment</option>
+                  </optgroup>
+                  <optgroup label="Income">
+                    <option value="Salary">Salary</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Dividends / Returns">Dividends / Returns</option>
+                    <option value="Other Income">Other Income</option>
+                  </optgroup>
                 </select>
               </div>
 
@@ -375,6 +409,10 @@
               <label class="type-radio-label income-label">
                 <input type="radio" name="tx-type" value="income" id="radio-type-income">
                 <span class="type-badge"><i class="fa-solid fa-plus"></i> Income</span>
+              </label>
+              <label class="type-radio-label investment-label">
+                <input type="radio" name="tx-type" value="investment" id="radio-type-investment">
+                <span class="type-badge"><i class="fa-solid fa-chart-line"></i> Investment</span>
               </label>
             </div>
           </div>
